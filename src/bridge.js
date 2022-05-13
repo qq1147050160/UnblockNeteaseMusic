@@ -5,12 +5,11 @@ require('./provider/insure').disable = true
 
 const router = {
 	qq: require('./provider/qq'),
-	xiami: require('./provider/xiami'),
-	baidu: require('./provider/baidu'),
 	kugou: require('./provider/kugou'),
 	kuwo: require('./provider/kuwo'),
+	bilibili: require('./provider/bilibili'),
 	migu: require('./provider/migu'),
-	joox: require('./provider/joox')
+	joox: require('./provider/joox'),
 }
 
 const distribute = (url, router) =>
