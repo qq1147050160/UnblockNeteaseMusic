@@ -6,9 +6,10 @@ module.exports = {
     watch: '.',
     env: {
       ENABLE_FLAC: true,
-      QQ_COOKIE: "uin=1147050160;qm_keyst=Q_H_L_5jbOw1FfrFjffH1xTBOaBMKT85kPLdstCnJKK8AUwY_fI5np4ReoKQA"
+      ENABLE_LOCAL_VIP: true,
+      QQ_COOKIE: "uin=1147050160;qm_keyst=Q_H_L_56BwaKja2SIfGX2t3LE77hwAxUn8WfEM4MQdDW2lIVnh8tMLmU95tVA"
     },
-    args: '-p 80:443 -f 45.254.48.1',
+    args: '-s -p 80:443 -f 45.254.48.1',
   }],
 
   deploy : {

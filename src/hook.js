@@ -5,6 +5,8 @@ const request = require('./request')
 const match = require('./provider/match')
 const querystring = require('querystring')
 
+const ENABLE_LOCAL_VIP = (process.env.ENABLE_LOCAL_VIP || '').toLowerCase() === 'true';
+
 const hook = {
 	request: {
 		before: () => {},
@@ -28,6 +30,7 @@ hook.target.host = new Set([
 	'interface3.music.163.com',
 	'apm.music.163.com',
 	'apm3.music.163.com',
+	'musicupload.netease.com', // support uploading
 	// 'mam.netease.com',
 	// 'api.iplay.163.com', // look living
 	// 'ac.dun.163yun.com',
@@ -55,6 +58,7 @@ hook.target.path = new Set([
 	'/api/song/enhance/privilege',
 	'/batch',
 	'/api/batch',
+	'/api/listen/together/privilege/get',
 	'/api/v1/search/get',
 	'/api/v1/search/song/get',
 	'/api/search/complex/get',
@@ -64,11 +68,16 @@ hook.target.path = new Set([
 	'/api/v1/play/record',
 	'/api/playlist/v4/detail',
 	'/api/v1/radio/get',
-	'/api/v1/discovery/recommend/songs'
+	'/api/v1/discovery/recommend/songs',
+	'/api/usertool/sound/mobile/promote',
+	'/api/usertool/sound/mobile/theme',
+	'/api/usertool/sound/mobile/animationList',
+	'/api/usertool/sound/mobile/all',
+	'/api/usertool/sound/mobile/detail',
 ])
 
 const domainList = [
-	'music.163.com', 
+	'music.163.com',
 	'music.126.net',
 	'iplay.163.com',
 	'look.163.com',
@@ -151,7 +160,43 @@ hook.request.after = ctx => {
 			}
 			catch(error) {
 				netease.encrypted = true
-				netease.jsonBody = JSON.parse(patch(crypto.eapi.decrypt(buffer).toString()))
+				netease.jsonBody = JSON.parse(patch(
+          crypto.eapi.decrypt(buffer).toString()
+        ))
+        if (ENABLE_LOCAL_VIP) {
+          if (
+            netease.path === '/batch' ||
+            netease.path === '/api/batch'
+          ) {
+            var info =
+              netease.jsonBody[
+                '/api/music-vip-membership/client/vip/info'
+              ];
+            if (info) {
+              try {
+                const expireTime =
+                  info.data.now + 31622400000;
+                info.data.redVipLevel = 7;
+                info.data.redVipAnnualCount = 1;
+
+                info.data.musicPackage.expireTime =
+                  expireTime;
+                info.data.musicPackage.vipCode = 230;
+
+                info.data.associator.expireTime =
+                  expireTime;
+
+                netease.jsonBody[
+                  '/api/music-vip-membership/client/vip/info'
+                ] = info;
+              } catch (error) {
+                console.warn(
+                  'Unable to apply the local VIP.'
+                );
+              }
+            }
+          }
+        }
 			}
 
 			if (new Set([401, 512]).has(netease.jsonBody.code) && !netease.web) {
@@ -164,17 +209,43 @@ hook.request.after = ctx => {
 			['transfer-encoding', 'content-encoding', 'content-length'].filter(key => key in proxyRes.headers).forEach(key => delete proxyRes.headers[key])
 
 			const inject = (key, value) => {
-				if (typeof(value) === 'object' && value != null) {
-					if ('fee' in value) value['fee'] = 0
-					if ('st' in value && 'pl' in value && 'dl' in value && 'subp' in value) { // batch modify
-						value['st'] = 0
-						value['subp'] = 1
-						value['pl'] = (value['pl'] == 0) ? 320000 : value['pl']
-						value['dl'] = (value['dl'] == 0) ? 320000 : value['dl']
-					}
-				}
-				return value
-			}
+        if (typeof value === 'object' && value != null) {
+          if ('cp' in value) value['cp'] = 1;
+          if (
+            'dl' in value &&
+            'downloadMaxbr' in value &&
+            value['dl'] < value['downloadMaxbr']
+          )
+            value['dl'] = value['downloadMaxbr'];
+          if ('fee' in value) value['fee'] = 0;
+          if (
+            'pl' in value &&
+            'playMaxbr' in value &&
+            value['pl'] < value['playMaxbr']
+          )
+            value['pl'] = value['playMaxbr'];
+          if ('sp' in value && 'st' in value && 'subp' in value) {
+            // batch modify
+            value['sp'] = 7;
+            value['st'] = 0;
+            value['subp'] = 1;
+          }
+          if (
+            'start' in value &&
+            'end' in value &&
+            'playable' in value &&
+            'unplayableType' in value &&
+            'unplayableUserIds' in value
+          ) {
+            value['start'] = 0;
+            value['end'] = 0;
+            value['playable'] = true;
+            value['unplayableType'] = 'unknown';
+            value['unplayableUserIds'] = [];
+          }
+        }
+        return value;
+      };
 
 			let body = JSON.stringify(netease.jsonBody, inject)
 			body = body.replace(/([^\\]"\s*:\s*)"(\d{16,})L"(\s*[}|,])/g, '$1$2$3') // for js precision
