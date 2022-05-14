@@ -14,7 +14,7 @@ const provider = {
 
 const match = (id, source) => {
 	let meta = {}
-	const candidate = (source || global.source || ['qq', 'kugou', 'kuwo', 'migu', 'bilibili']).filter(name => name in provider)
+	const candidate = (source || global.source || ['kugou', 'kuwo', 'qq', 'migu', 'bilibili']).filter(name => name in provider)
 	return find(id)
 	.then(info => {
 		meta = info

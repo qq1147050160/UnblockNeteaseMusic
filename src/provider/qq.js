@@ -69,7 +69,7 @@ const single = (id, format) => {
 const track = id => {
 	id.key = id.file
 	return Promise.all(
-		[['F000', '.flac'], ['M800', '.mp3'], ['M500', '.mp3']].slice((headers.cookie || typeof(window) !== 'undefined') ? (select.ENABLE_FLAC ? 0 : 1) : 2)
+		[['F000', '.flac'], ['M800', '.mp3'], ['M500', '.mp3']].slice((headers.cookie || typeof(window) !== 'undefined') ? 1 : 2)
 		.map(format => single(id, format).catch(() => null))
 	)
 	.then(result => result.find(url => url) || Promise.reject())
