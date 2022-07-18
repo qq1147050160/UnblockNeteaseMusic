@@ -1,5 +1,6 @@
 const find = require('./find')
 const request = require('../request')
+const select = require('./select')
 
 const provider = {
 	netease: require('./netease'),
@@ -22,6 +23,18 @@ const match = (id, source) => {
 	})
 	.then(urls => {
 		urls = urls.filter(url => url)
+    // 如果是高音质，就优先使用高音质
+    if (select.ENABLE_FLAC) {
+      const list = []
+      urls.forEach((url = '') => {
+        if (url.includes('.flac')) {
+          list.unshift(url)
+        } else {
+          list.push(url)
+        }
+      });
+      return Promise.all(list.map(url => check(url)))
+    }
 		return Promise.all(urls.map(url => check(url)))
 	})
 	.then(songs => {

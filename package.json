@@ -7,7 +7,8 @@
     "unblockneteasemusic": "app.js"
   },
   "scripts": {
-    "pkg": "pkg . --out-path=dist/"
+    "pkg": "pkg . --out-path=dist/",
+    "start": "node ./app.js -p 80:443  -f 45.254.48.1"
   },
   "pkg": {
     "assets": [
@@ -21,7 +22,9 @@
   },
   "author": "nondanee",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "dotenv": "^16.0.1"
+  },
   "publishConfig": {
     "access": "public"
   }

@@ -14,6 +14,8 @@ const config = require('./cli.js')
 .option(['-s', '--strict'], {action: 'store_true', help: 'enable proxy limitation'})
 .option(['-h', '--help'], {action: 'help'})
 .parse(process.argv)
+const dotenv = require('dotenv')
+dotenv.config()
 
 global.address = config.address
 config.port = (config.port || '8080').split(':').map(string => parseInt(string))
@@ -35,7 +37,7 @@ if (config.forceHost && require('net').isIP(config.forceHost) === 0) {
 	process.exit(1)
 }
 if (config.matchOrder) {
-	const provider = new Set(['netease', 'qq', 'kugou','kuwo', 'bilibili', 'migu'])
+	const provider = new Set(['netease', 'qq', 'kuwo', 'kugou', 'bilibili', 'migu'])
 	const candidate = config.matchOrder
 	if (candidate.some((key, index) => index != candidate.indexOf(key))) {
 		console.log('Please check the duplication in match order.')
