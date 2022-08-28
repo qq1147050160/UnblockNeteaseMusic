@@ -17,7 +17,7 @@ const config = require('./cli.js')
 const dotenv = require('dotenv')
 dotenv.config()
 
-global.address = config.address || '127.0.0.1'
+global.address = config.address
 config.port = (config.port || '8080').split(':').map(string => parseInt(string))
 const invalid = value => (isNaN(value) || value < 1 || value > 65535)
 if (config.port.some(invalid)) {

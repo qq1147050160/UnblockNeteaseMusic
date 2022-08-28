@@ -52,7 +52,6 @@ const proxy = {
 		}
 	},
 	abort: (socket, from) => {
-		// console.log('call abort', from)
 		if (socket) socket.end()
 		if (socket && !socket.destroyed) socket.destroy()
 	},
@@ -65,10 +64,11 @@ const proxy = {
 	log: ctx => {
 		const {req, socket, decision} = ctx
 		const mark = {close: '|', blank: '-', proxy: '>'}[decision] || '>'
-		if (socket)
-			console.log('TUNNEL', mark, req.url)
-		else
-			console.log('MITM', mark, parse(req.url).host, req.socket.encrypted ? '(ssl)' : '')
+		if (socket) {
+      console.log('TUNNEL', mark, req.url)
+    } else {
+      console.log('MITM', mark, parse(req.url).host, req.socket.encrypted ? '(ssl)' : '')
+    }
 	},
 	authenticate: ctx => {
 		const {req, res, socket} = ctx

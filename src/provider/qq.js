@@ -3,8 +3,6 @@ const insure = require('./insure')
 const select = require('./select')
 const request = require('../request')
 
-console.log(process.env.QQ_COOKIE);
-
 const headers = {
 	'origin': 'http://y.qq.com/',
 	'referer': 'http://y.qq.com/',
