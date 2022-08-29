@@ -21,9 +21,6 @@
     "url": "https://github.com/nondanee/UnblockNeteaseMusic.git"
   },
   "author": "nondanee",
-  "thank": {
-    "one": "https://github.com/UnblockNeteaseMusic/server"
-  },
   "license": "MIT",
   "dependencies": {
     "dotenv": "^16.0.1"
