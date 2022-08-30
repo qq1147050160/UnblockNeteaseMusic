@@ -6,7 +6,7 @@ const request = require('../request')
 const headers = {
 	'origin': 'http://y.qq.com/',
 	'referer': 'http://y.qq.com/',
-	'cookie': process.env.QQ_COOKIE || null // 'uin=; qm_keyst=',
+	'cookie': process.env.QQ_COOKIE || null
 }
 
 const format = song => ({
@@ -27,7 +27,7 @@ const search = info => {
         method: "DoSearchForQQMusicDesktop",
         module: "music.search.SearchCgiService",
         param: {
-          num_per_page: 1, // 每页条数
+          num_per_page: 10, // 每页条数
           page_num: 1, // 第几页
           query: info.keyword,
           search_type: 0, // 0单曲 1歌手 2专辑 3歌单 4mv 7歌词 8用户

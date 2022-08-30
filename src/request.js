@@ -102,5 +102,16 @@ request.queryStringify = (o = {}) => {
   }
   return "";
 };
+request.getCookies = (cookieString = '') => {
+  const arr = cookieString.split(';');
+  const obj = {};
+  arr.forEach(function (ele) {
+    const arr1 = ele.split('=');
+    const key = arr1[0]?.trim();
+    const value = arr1[1]?.trim();
+      obj[key] = value;
+  })
+  return obj;
+}
 
 module.exports = request
