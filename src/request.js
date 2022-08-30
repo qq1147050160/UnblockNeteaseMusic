@@ -93,5 +93,14 @@ request.read = read
 request.create = create
 request.translate = translate
 request.configure = configure
+request.queryStringify = (o = {}) => {
+  const stringify = Object.keys(o)
+    .map((key) => `${key}=${o[key]}&`)
+    .join("");
+  if (stringify.length) {
+    return stringify.slice(0, -1);
+  }
+  return "";
+};
 
 module.exports = request
