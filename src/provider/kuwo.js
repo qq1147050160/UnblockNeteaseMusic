@@ -5,36 +5,34 @@ const crypto = require('../crypto')
 const request = require('../request')
 
 const format = (song) => ({
-	id: song.musicrid.split('_').pop(),
-	name: song.name,
+	id: song.MUSICRID.split('_').pop(),
+	name: song.SONGNAME,
 	// duration: song.songTimeMinutes.split(':').reduce((minute, second) => minute * 60 + parseFloat(second), 0) * 1000,
-	duration: song.duration * 1000,
-	album: { id: song.albumid, name: song.album },
-	artists: song.artist
-		.split('&')
-		.map((name, index) => ({ id: index ? null : song.artistid, name })),
+	duration: song.DURATION * 1000,
+	album: { id: song.ALBUMID, name: song.ALBUM },
+	artists: song.ARTIST.split('&').map((name, index) => ({
+		id: index ? null : song.ARTISTID,
+		name,
+	})),
 });
 
 const search = (info) => {
 	const keyword = encodeURIComponent(info.keyword.replace(' - ', ''));
-	const url = `http://www.kuwo.cn/api/www/search/searchMusicBykeyWord?key=${keyword}&pn=1&rn=30`;
-
-	const token = Math.random().toString(16).slice(-11).toUpperCase();
-	return request('GET', url, {
-		referer: `http://www.kuwo.cn/search/list?key=${keyword}`,
-		csrf: token,
-		cookie: `kw_token=${token}`,
-	})
+	const url =
+		'http://search.kuwo.cn/r.s?&correct=1&stype=comprehensive&encoding=utf8' +
+		'&rformat=json&mobi=1&show_copyright_off=1&searchapi=6&all=' +
+		keyword;
+	return request('GET', url)
 		.then((response) => response.json())
 		.then((jsonBody) => {
 			if (
-				jsonBody &&
-				typeof jsonBody === 'object' &&
-				'code' in jsonBody &&
-				jsonBody.code !== 200
+				!jsonBody ||
+				jsonBody.content.length < 2 ||
+				!jsonBody.content[1].musicpage ||
+				jsonBody.content[1].musicpage.abslist.length < 1
 			)
 				return Promise.reject();
-			const list = jsonBody.data.list.map(format);
+			const list = jsonBody.content[1].musicpage.abslist.map(format);
 			const matched = select(list, info);
 			return matched ? matched.id : Promise.reject();
 		});

@@ -2,6 +2,7 @@ const cache = require('../cache')
 const insure = require('./insure')
 const select = require('./select')
 const request = require('../request')
+const crypto = require('../crypto')
 
 const cookieConfig = request.getCookies(process.env.KUGOU_COOKIE)
 
@@ -11,12 +12,12 @@ const headers = {
 
 const format = (song) => {
 	return {
-		id: song['hash'],
+    id: song['hash'],
 		id_hq: song['320hash'],
 		id_sq: song['sqhash'],
-		album_audio_id: song['album_audio_id'],
 		name: song['songname'],
 		duration: song['duration'] * 1000,
+		album_audio_id: song['album_audio_id'],
 		album: { id: song['album_id'], name: song['album_name'] },
 	};
 };
@@ -53,17 +54,11 @@ const single = (song, format) => {
 	};
 
   const url = 
-      `https://wwwapi.kugou.com/yy/index.php?r=play/getdata&callback=jQuery19109264784535129995_${+new Date()}` +
-      `&hash=${getHashId()}&platid=4&album_id=${song.album.id}&album_audio_id=${song.album_audio_id}` + 
-      `&dfid=${cookieConfig.kg_dfid}&appid=1014&mid=${cookieConfig.kg_mid}&_=${+new Date()}`;
+      `http://trackercdn.kugou.com/i/v2/?key=${crypto.md5.digest(`${getHashId()}kgcloudv2`)}` +
+      `&hash=${getHashId()}&appid=1005&pid=2&cmd=25&behavior=play&album_id=${song.album.id}`;
 	return request('GET', url, headers)
 		.then((response) => response.body())
-		.then((bodyString) => {
-      const jsonString = bodyString.slice(41, -2).replace(/\r/g,"\\r").replace(/\n/g,"\\n")
-      const jsonBody = JSON.parse(decodeURIComponent(jsonString));
-      const { data } = jsonBody || {};
-      return data.play_url || data.play_backup_url || Promise.reject()
-    })
+		.then((jsonBody) => jsonBody.url[0] || Promise.reject());
 };
 
 const track = (song) =>

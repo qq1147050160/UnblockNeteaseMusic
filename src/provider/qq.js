@@ -4,8 +4,8 @@ const select = require('./select')
 const request = require('../request')
 
 const headers = {
-	'origin': 'http://y.qq.com/',
-	'referer': 'http://y.qq.com/',
+	'origin': 'https://y.qq.com/',
+	'referer': 'https://y.qq.com/',
 	'cookie': process.env.QQ_COOKIE || null
 }
 
@@ -18,27 +18,26 @@ const format = song => ({
 })
 
 const search = info => {
-	return request(
-    "POST",
-    "https://u.y.qq.com/cgi-bin/musicu.fcg",
-    headers,
-    JSON.stringify({
-      "music.search.SearchCgiService": {
-        method: "DoSearchForQQMusicDesktop",
-        module: "music.search.SearchCgiService",
-        param: {
-          num_per_page: 10, // 每页条数
-          page_num: 1, // 第几页
-          query: info.keyword,
-          search_type: 0, // 0单曲 1歌手 2专辑 3歌单 4mv 7歌词 8用户
-        },
-      },
-    })
-  )
+  const url =
+		'https://u.y.qq.com/cgi-bin/musicu.fcg?data=' +
+		encodeURIComponent(
+			JSON.stringify({
+				search: {
+					method: 'DoSearchForQQMusicDesktop',
+					module: 'music.search.SearchCgiService',
+					param: {
+						num_per_page: 5,
+						page_num: 1,
+						query: info.keyword,
+						search_type: 0,
+					},
+				},
+			})
+		);
+	return request("POST", url, headers)
 	.then(response => response.jsonp())
 	.then(jsonBody => {
-		const result = jsonBody["music.search.SearchCgiService"].data;
-    const list = result.body.song.list.map(format);
+    const list = jsonBody.search.data.body.song.list.map(format);
 		const matched = select(list, info)
 		return matched ? matched.id : Promise.reject()
 	})
@@ -46,31 +45,43 @@ const search = info => {
 
 const single = (id, format) => {
 	const uin = ((headers.cookie || '').match(/uin=(\d+)/) || [])[1] || '0'
-
 	const url =
 		'https://u.y.qq.com/cgi-bin/musicu.fcg?data=' +
-		encodeURIComponent(JSON.stringify({
-			req_0: {
-				module: 'vkey.GetVkeyServer',
-				method: 'CgiGetVkey',
-				param: {
-					guid: (Math.random() * 10000000).toFixed(0),
-					loginflag: 1,
-					filename: [format.join(id.file)],
-					songmid: [id.song],
-					songtype: [0],
-					uin,
-					platform: '20'
-				}
-			}
-		}))
+		encodeURIComponent(
+			JSON.stringify({
+				req_0: {
+					module: 'vkey.GetVkeyServer',
+					method: 'CgiGetVkey',
+					param: {
+						guid: (Math.random() * 10000000).toFixed(0),
+						loginflag: 1,
+						filename: format[0] ? [format.join(id.file)] : null,
+						songmid: [id.song],
+						songtype: [0],
+						uin,
+						platform: '20',
+					},
+				},
+			})
+		);
 
 	return request('GET', url, headers)
 	.then(response => response.json())
-	.then(jsonBody => {
-		const { sip, midurlinfo } = jsonBody.req_0.data
-		return midurlinfo[0].purl ? sip[0] + midurlinfo[0].purl : Promise.reject()
-	})
+	.then((jsonBody) => {
+    const { sip, midurlinfo } = jsonBody.req_0.data;
+    if (!midurlinfo[0].purl) return Promise.reject();
+
+    const playurl = sip[0] + midurlinfo[0].purl;
+    const header = {
+      range: 'bytes=0-8191',
+      'accept-encoding': 'identity',
+    };
+    return request('GET', playurl, header).then((response) => {
+      if (response.statusCode < 200 || response.statusCode > 299)
+        return Promise.reject();
+      else return playurl;
+    });
+  });
 }
 
 const track = id => {
